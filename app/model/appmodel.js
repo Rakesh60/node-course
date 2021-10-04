@@ -51,6 +51,99 @@ Task.deleteBlog = (req, result) => {
     }
   });
 };
+Task.registerBlog = (req, result) => {
+  const { user_name, pass_word } = req.body;
+  let query = `INSERT INTO login_master (user_name, pass_word) VALUES ('${user_name}','${pass_word}')`;
+  sql.query(query, async (err, response) => {
+    if (err) {
+      if (err.code === "ER_DUP_ENTRY") {
+        result({ status: "duplicate" }, null);
+      } else {
+        console.log(err);
+        result(err, null);
+      }
+    } else {
+      result(null, response);
+    }
+  });
+};
+Task.loginBlog = (req, result) => {
+  const { user_name, pass_word } = req.body;
+  let query = `SELECT user_name, pass_word FROM test.login_master where user_name="${user_name}";
+  `;
+  sql.query(query, async (err, response) => {
+    if (err) {
+      console.log(err);
+      result(err, null);
+    } else {
+      const value = JSON.parse(JSON.stringify(response));
+      const data = value[0];
+      if (data.pass_word === pass_word) {
+        result(null, { status: true });
+      } else {
+        result(null, { status: false });
+      }
+    }
+  });
+};
+
+Task.transfer = (req, result) => {
+  const { value, id } = req.body;
+  let query = `SELECT amount FROM bank_acc`;
+  sql.query(query, async (err, response) => {
+    if (err) {
+      console.log(err);
+      result(err, null);
+    } else {
+      const data = JSON.parse(JSON.stringify(response))[0];
+      const { amount } = data;
+      if (amount < value) {
+        result(null, { message: "amount unavailable" });
+      } else {
+        sql.query(
+          `select user_id from login_master where user_id = "${id}"`,
+          (err, response) => {
+            if (err) {
+              console.log(err);
+              result(err, null);
+            } else {.
+              const data1 = JSON.parse(JSON.stringify(response));
+              if (data1.length === 0) {
+                result(null, { message: "user does not exist" });
+              } else {
+                sql.query(
+                  `UPDATE login_master SET bal = bal + '${value}' WHERE (user_id = '${id}')`,
+                  (err, response) => {
+                    if (err) {
+                      console.log(err);
+                      result(err, null);
+                    } else {
+                      const data2 = JSON.parse(JSON.stringify(response));
+                      if (data2.changedRows > 0) {
+                        sql.query(
+                          `UPDATE bank_acc SET amount = amount-"${value}"`,
+                          (err, resp) => {
+                            if (err) {
+                              console.log(err);
+                              result(err, null);
+                            } else {
+                              result(null, { message: "successfull" });
+                            }
+                          }
+                        );
+                      }
+                    }
+                  }
+                );
+              }
+            }
+          }
+        );
+      }
+      // result(null, { amount });
+    }
+  });
+};
 
 export default Task;
 

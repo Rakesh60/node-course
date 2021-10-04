@@ -4,6 +4,9 @@ const appRoutes = (app) => {
   app.route("/blogs").post(appController.postBlog);
   app.route("/update/:id").post(appController.updateBlog);
   app.route("/delete/:rid").get(appController.deleteBlog);
+  app.route("/register").post(appController.registerBlog);
+  app.route("/login").post(appController.loginBlog);
+  app.route("/transfer").post(appController.transfer);
 };
 
 export default appRoutes;
