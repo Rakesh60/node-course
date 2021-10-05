@@ -1,22 +1,27 @@
 import sql from "../../database.js";
+import jwt from "jsonwebtoken";
 
 const Task = {};
 
 Task.getBlog = (req, result) => {
-  let getAllPost = `select * from blog`;
+  console.log(req.id);
+  let getAllPost = `select * from blog;`;
   sql.query(getAllPost, async (err, response) => {
     if (err) {
       console.log(err);
       result(err, null);
     } else {
-      result(null, response);
+      const data = response.map((val) => {
+        return { ...val, owner: val.user_id === req.id };
+      });
+      result(null, data);
     }
   });
 };
 
 Task.postBlog = (req, result) => {
   const { body, createdBy } = req.body;
-  let query = `insert into blog (body, created_by) values ('${body}', '${createdBy}')`;
+  let query = `insert into blog (body, user_id) values ('${body}', '${req.id}')`;
   sql.query(query, async (err, response) => {
     if (err) {
       console.log(err);
@@ -69,7 +74,7 @@ Task.registerBlog = (req, result) => {
 };
 Task.loginBlog = (req, result) => {
   const { user_name, pass_word } = req.body;
-  let query = `SELECT user_name, pass_word FROM test.login_master where user_name="${user_name}";
+  let query = `SELECT user_id,user_name, pass_word FROM test.login_master where user_name="${user_name}";
   `;
   sql.query(query, async (err, response) => {
     if (err) {
@@ -78,10 +83,21 @@ Task.loginBlog = (req, result) => {
     } else {
       const value = JSON.parse(JSON.stringify(response));
       const data = value[0];
-      if (data.pass_word === pass_word) {
-        result(null, { status: true });
+      if (response.length === 0) {
+        result(null, { status: false, message: "invalid credentials" });
       } else {
-        result(null, { status: false });
+        if (data.pass_word === pass_word) {
+          const token = jwt.sign(
+            {
+              id: data.user_id,
+            },
+            "ABC",
+            { expiresIn: "2d" }
+          );
+          result(null, { status: true, token });
+        } else {
+          result(null, { status: false });
+        }
       }
     }
   });
@@ -106,7 +122,7 @@ Task.transfer = (req, result) => {
             if (err) {
               console.log(err);
               result(err, null);
-            } else {.
+            } else {
               const data1 = JSON.parse(JSON.stringify(response));
               if (data1.length === 0) {
                 result(null, { message: "user does not exist" });

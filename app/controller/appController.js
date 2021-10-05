@@ -2,7 +2,7 @@ import appModel from "../model/appmodel.js";
 const Task = {};
 
 Task.getBlog = (req, res) => {
-  appModel.getBlog(req.body, (err, response) => {
+  appModel.getBlog(req, (err, response) => {
     if (err) {
       res.send(err);
     } else {
